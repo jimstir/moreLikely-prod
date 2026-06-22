@@ -1,0 +1,49 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: var(--font-outfit), ui-sans-serif, system-ui, sans-serif;
+}
+
+@layer base {
+  :root {
+    --background: #c4b5ab;
+    --foreground: #3d2314;
+    
+    --card-bg: rgba(230, 216, 207, 0.4);
+    --card-border: rgba(166, 60, 6, 0.2);
+    
+    --accent-primary: #d95c25;
+    --accent-secondary: #a63c06;
+    
+    --success: #059669;
+    --danger: #dc2626;
+  }
+}
+
+@layer base {
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    background-image: 
+      radial-gradient(circle at 15% 50%, rgba(217, 92, 37, 0.08), transparent 25%),
+      radial-gradient(circle at 85% 30%, rgba(166, 60, 6, 0.05), transparent 25%);
+    background-attachment: fixed;
+    min-height: 100vh;
+  }
+}
+
+@layer utilities {
+  .glass {
+    background: var(--card-bg);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--card-border);
+  }
+  
+  .text-gradient {
+    background: linear-gradient(to right, var(--accent-primary), var(--accent-secondary));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+}

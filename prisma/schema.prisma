@@ -1,0 +1,81 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Wallet {
+  address          String             @id
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  profile          Profile?
+  savedMarkets     SavedMarket[]
+  engagements      UserEngagement[]
+}
+
+model Profile {
+  id               String   @id @default(cuid())
+  walletAddress    String   @unique
+  wallet           Wallet   @relation(fields: [walletAddress], references: [address], onDelete: Cascade)
+  
+  // From technical-design / predict-insights
+  categories       String[]
+  tags             String[]
+  customNewsSources String[]
+  
+  explicitInterests Json?    // e.g. { politics: 1, crypto: 5 }
+  inferredInterests Json?    // e.g. { topic: { interest_score, skill_score, engagement_score } }
+  marketSettings    Json?    // e.g. { binary_markets: 1, short_term_markets: 5 }
+  performance       Json?    // e.g. { popular_market: [], wins, losses }
+  
+  embeddingVector   Float[]  // 1536-dim vector depending on LLM
+  
+  lastUpdated      DateTime @default(now())
+}
+
+model SavedMarket {
+  id            String   @id @default(cuid())
+  walletAddress String
+  wallet        Wallet   @relation(fields: [walletAddress], references: [address], onDelete: Cascade)
+  marketId      String
+  savedAt       DateTime @default(now())
+
+  @@unique([walletAddress, marketId])
+}
+
+model UserEngagement {
+  id            String   @id @default(cuid())
+  walletAddress String
+  wallet        Wallet   @relation(fields: [walletAddress], references: [address], onDelete: Cascade)
+  marketId      String
+  
+  clicks        Int      @default(0)
+  views         Int      @default(0)
+  likes         Int      @default(0)
+  dislikes      Int      @default(0)
+  insightsCount Int      @default(0)
+  
+  feedbackText  String?
+  
+  updatedAt     DateTime @updatedAt
+
+  @@unique([walletAddress, marketId])
+}
+
+model SimilarMarket {
+  id            String   @id @default(cuid())
+  marketAId     String
+  marketBId     String
+  isMatch       Boolean
+  confidence    Float
+  rationale     String?
+  
+  createdAt     DateTime @default(now())
+
+  @@unique([marketAId, marketBId])
+}
