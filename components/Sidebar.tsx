@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { AppConfig } from "@/morelikely.config";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -21,6 +22,14 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     setInput('');
     setMessages(prev => [...prev, { role: 'user', content: userMsg }]);
     setLoading(true);
+
+    if (AppConfig.useMockData) {
+      setTimeout(() => {
+        setMessages(prev => [...prev, { role: 'agent', content: "This is a mock response from the Insight Agent. It bypassed the 0G Inference network because useMockData is true." }]);
+        setLoading(false);
+      }, 600);
+      return;
+    }
 
     const address = localStorage.getItem('connected_wallet') || 'anonymous';
     

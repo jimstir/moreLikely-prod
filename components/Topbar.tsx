@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { BrowserProvider } from "ethers";
+import { AppConfig } from "@/morelikely.config";
 
 declare global {
   interface Window {
@@ -24,6 +25,13 @@ export default function Topbar({ onToggleSidebar, onOpenSettings }: TopbarProps)
   }, []);
 
   const connectWallet = async () => {
+    if (AppConfig.useMockData) {
+      const mockAddr = "0xMOCK_WALLET_ADDRESS";
+      setAddress(mockAddr);
+      localStorage.setItem('connected_wallet', mockAddr);
+      return;
+    }
+
     if (typeof window.ethereum !== 'undefined') {
       try {
         const provider = new BrowserProvider(window.ethereum as any);

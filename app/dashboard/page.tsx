@@ -4,13 +4,25 @@ import { useEffect, useState } from "react";
 import MarketCard from "@/components/MarketCard";
 import ProfileWidget from "@/components/ProfileWidget";
 import { MarketItem } from "@/lib/types";
+import { AppConfig } from "@/morelikely.config";
+import { mockMarkets } from "@/lib/mockData";
 
 export default function DashboardPage() {
   const [markets, setMarkets] = useState<MarketItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [lastRefreshed, setLastRefreshed] = useState<Date>(new Date());
 
-  useEffect(() => {
-    // In a real app, we'd get the connected wallet address from context
+  const fetchRecommendations = () => {
+    setLoading(true);
+    if (AppConfig.useMockData) {
+      setTimeout(() => {
+        setMarkets(mockMarkets);
+        setLastRefreshed(new Date());
+        setLoading(false);
+      }, 500);
+      return;
+    }
+
     const address = localStorage.getItem('connected_wallet') || '';
     
     fetch('/api/recommendations', {
@@ -22,11 +34,19 @@ export default function DashboardPage() {
       .then(data => {
         if (data.recommendations) {
           setMarkets(data.recommendations);
+          setLastRefreshed(new Date());
         }
       })
       .catch(err => console.error("Failed to load markets:", err))
       .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    fetchRecommendations();
   }, []);
+
+  // Determine indicator color: green if generated < 5 mins ago, red if older
+  const isRecent = (new Date().getTime() - lastRefreshed.getTime()) < 5 * 60 * 1000;
 
   return (
     <div className="max-w-7xl mx-auto animate-in fade-in duration-500">
@@ -39,7 +59,21 @@ export default function DashboardPage() {
           <p className="text-[#5c3a21]">Curated specifically for your portfolio and interests.</p>
         </div>
         
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-center">
+          {/* Status Notifier / Refresh Button */}
+          <button 
+            onClick={fetchRecommendations}
+            className={`flex items-center gap-2 px-3 py-2 text-sm font-semibold rounded-lg transition-colors border shadow-sm ${
+              isRecent 
+                ? 'bg-[#10b981]/10 text-[#10b981] border-[#10b981]/20 hover:bg-[#10b981]/20' 
+                : 'bg-[#ef4444]/10 text-[#ef4444] border-[#ef4444]/20 hover:bg-[#ef4444]/20'
+            }`}
+            title="Click to request a new recommendation list from the LLM"
+          >
+            <div className={`w-2 h-2 rounded-full animate-pulse ${isRecent ? 'bg-[#10b981]' : 'bg-[#ef4444]'}`}></div>
+            {isRecent ? 'Live' : 'Stale (Refresh)'}
+          </button>
+          
           <button className="px-4 py-2 text-sm font-medium text-[#d95c25] bg-[#e6d8cf]/40 rounded-lg hover:bg-[#d95c25]/10 transition-colors border border-[#d95c25]/30">
             For You
           </button>

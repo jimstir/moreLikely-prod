@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { MarketItem } from "@/lib/types";
+import { AppConfig } from "@/morelikely.config";
+import { mockSimilarMarkets } from "@/lib/mockData";
 
 interface SimilarMarketsModalProps {
   market: MarketItem;
@@ -13,6 +15,14 @@ export default function SimilarMarketsModal({ market, onClose }: SimilarMarketsM
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (AppConfig.useMockData) {
+      setTimeout(() => {
+        setSimilarMarkets(mockSimilarMarkets);
+        setLoading(false);
+      }, 500);
+      return;
+    }
+
     fetch(`/api/markets/similar?marketId=${market.id}`)
       .then(res => res.json())
       .then(data => {
