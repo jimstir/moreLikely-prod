@@ -10,72 +10,107 @@ datasource db {
 }
 
 model Wallet {
-  address          String             @id
-  createdAt        DateTime           @default(now())
-  updatedAt        DateTime           @updatedAt
-  profile          Profile?
-  savedMarkets     SavedMarket[]
-  engagements      UserEngagement[]
+  id              String               @id @default(uuid())
+  address         String               @unique // Lowercase wallet address
+  email           String?              @unique // Collected during onboarding
+  tier            String               @default("free") // Subscription tier status
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+  profile         Profile?
+  insightMemories InsightMemory[]
+  savedMarkets    SavedMarket[]
+  engagements     UserEngagement[]
+  payments        PaymentTransaction[]
+}
+
+model InsightMemory {
+  id              String   @id @default(uuid())
+  walletId        String
+  wallet          Wallet   @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  marketId        String
+  userQuestion    String   // The specific predefined or custom question asked
+  llmSummary      String   // A condensed summary of the LLM's final response
+  createdAt       DateTime @default(now())
+}
+
+model PaymentTransaction {
+  id              String   @id @default(uuid())
+  walletId        String
+  wallet          Wallet   @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  txHash          String   @unique
+  network         String   // e.g., '0G', 'Ethereum', 'Base'
+  token           String   // e.g., 'USDC', 'ETH', '0G'
+  amount          Float
+  tierPurchased   String
+  createdAt       DateTime @default(now())
 }
 
 model Profile {
-  id               String   @id @default(cuid())
-  walletAddress    String   @unique
-  wallet           Wallet   @relation(fields: [walletAddress], references: [address], onDelete: Cascade)
+  id                String   @id @default(uuid())
+  walletId          String   @unique
+  wallet            Wallet   @relation(fields: [walletId], references: [id], onDelete: Cascade)
   
   // From technical-design / predict-insights
-  categories       String[]
-  tags             String[]
-  customNewsSources String[]
+  categories        String   @default("")
+  tags              String   @default("")
+  customNewsSources String   @default("") // Comma-separated list of URLs for Firecrawl
   
   explicitInterests Json?    // e.g. { politics: 1, crypto: 5 }
-  inferredInterests Json?    // e.g. { topic: { interest_score, skill_score, engagement_score } }
-  marketSettings    Json?    // e.g. { binary_markets: 1, short_term_markets: 5 }
+  inferredInterests Json     @default("{}") // e.g. { topic: { interest_score, skill_score, engagement_score } }
+  marketSettings    Json     @default("{}") // e.g. { binary_markets: 1, short_term_markets: 5 }
   performance       Json?    // e.g. { popular_market: [], wins, losses }
   
   embeddingVector   Float[]  // 1536-dim vector depending on LLM
   
-  lastUpdated      DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model Market {
+  id              String   @id @default(uuid())
+  externalId      String   @unique // Kalshi/Polymarket ID
+  platform        String   // e.g., 'Kalshi' or 'Polymarket'
+  title           String   @db.VarChar(500)
+  subtitle        String?  @db.VarChar(500)
+  url             String?  // External link to the market
+  createdAt       DateTime @default(now())
+
+  savedBy         SavedMarket[]
+  engagements     UserEngagement[]
 }
 
 model SavedMarket {
-  id            String   @id @default(cuid())
-  walletAddress String
-  wallet        Wallet   @relation(fields: [walletAddress], references: [address], onDelete: Cascade)
-  marketId      String
-  savedAt       DateTime @default(now())
+  id              String   @id @default(uuid())
+  walletId        String
+  wallet          Wallet   @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  marketId        String   // References Market.id
+  market          Market   @relation(fields: [marketId], references: [id], onDelete: Cascade)
+  savedAt         DateTime @default(now())
 
-  @@unique([walletAddress, marketId])
+  @@unique([walletId, marketId])
 }
 
 model UserEngagement {
-  id            String   @id @default(cuid())
-  walletAddress String
-  wallet        Wallet   @relation(fields: [walletAddress], references: [address], onDelete: Cascade)
-  marketId      String
+  id              String   @id @default(uuid())
+  walletId        String
+  wallet          Wallet   @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  marketId        String   // References Market.id
+  market          Market   @relation(fields: [marketId], references: [id], onDelete: Cascade)
   
-  clicks        Int      @default(0)
-  views         Int      @default(0)
-  likes         Int      @default(0)
-  dislikes      Int      @default(0)
-  insightsCount Int      @default(0)
+  clickCount      Int      @default(0)
+  insightsCount   Int      @default(0) // Tracks how many times the user requested an insight for this market
+  isWatchlisted   Boolean  @default(false)
+  interactionType String   @default("view")
+  feedbackText    String?  // The specific "Why" option selected on dislike
   
-  feedbackText  String?
-  
-  updatedAt     DateTime @updatedAt
+  lastInteraction DateTime @default(now()) @updatedAt
 
-  @@unique([walletAddress, marketId])
+  @@unique([walletId, marketId])
 }
 
 model SimilarMarket {
-  id            String   @id @default(cuid())
-  marketAId     String
-  marketBId     String
-  isMatch       Boolean
-  confidence    Float
-  rationale     String?
-  
-  createdAt     DateTime @default(now())
-
-  @@unique([marketAId, marketBId])
+  id              String   @id @default(uuid())
+  marketIId       String   // References Market.id
+  marketJId       String   // References Market.id
+  confidence      Float    @default(0.0)
+  rationale       String
 }

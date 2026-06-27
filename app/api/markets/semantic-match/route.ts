@@ -14,26 +14,31 @@ export async function POST(req: Request) {
     const matchResult = await getMarketSemanticMatches(marketA, marketB);
 
     // 2. Cache result
-    const cached = await prisma.similarMarket.upsert({
+    let cached = await prisma.similarMarket.findFirst({
       where: {
-        marketAId_marketBId: {
-          marketAId: marketA.id,
-          marketBId: marketB.id
-        }
-      },
-      update: {
-        isMatch: matchResult.isMatch,
-        confidence: matchResult.confidence,
-        rationale: matchResult.rationale
-      },
-      create: {
-        marketAId: marketA.id,
-        marketBId: marketB.id,
-        isMatch: matchResult.isMatch,
-        confidence: matchResult.confidence,
-        rationale: matchResult.rationale
+        marketIId: marketA.id,
+        marketJId: marketB.id
       }
     });
+
+    if (cached) {
+      cached = await prisma.similarMarket.update({
+        where: { id: cached.id },
+        data: {
+          confidence: matchResult.confidence,
+          rationale: matchResult.rationale
+        }
+      });
+    } else {
+      cached = await prisma.similarMarket.create({
+        data: {
+          marketIId: marketA.id,
+          marketJId: marketB.id,
+          confidence: matchResult.confidence,
+          rationale: matchResult.rationale
+        }
+      });
+    }
 
     return NextResponse.json({ matchResult, cached });
   } catch (error) {

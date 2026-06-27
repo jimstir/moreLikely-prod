@@ -9,24 +9,32 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Missing address' }, { status: 400 });
     }
 
+    const wallet = await prisma.wallet.findUnique({
+      where: { address: address.toLowerCase() }
+    });
+
+    if (!wallet) {
+      return NextResponse.json({ error: 'Wallet not found' }, { status: 404 });
+    }
+
     try {
       const profile = await prisma.profile.upsert({
-        where: { walletAddress: address.toLowerCase() },
+        where: { walletId: wallet.id },
         update: {
-          categories: categories ? categories.split(',').map((s: string) => s.trim()) : [],
-          tags: tags ? tags.split(',').map((s: string) => s.trim()) : [],
-          customNewsSources: customNewsSources ? customNewsSources.split(',').map((s: string) => s.trim()) : [],
-          // We don't have platform in Profile schema, but user stores it in localStorage usually
+          categories: categories || '',
+          tags: tags || '',
+          customNewsSources: customNewsSources || ''
         },
         create: {
-          walletAddress: address.toLowerCase(),
-          categories: categories ? categories.split(',').map((s: string) => s.trim()) : [],
-          tags: tags ? tags.split(',').map((s: string) => s.trim()) : [],
-          customNewsSources: customNewsSources ? customNewsSources.split(',').map((s: string) => s.trim()) : [],
+          walletId: wallet.id,
+          categories: categories || '',
+          tags: tags || '',
+          customNewsSources: customNewsSources || ''
         }
       });
       return NextResponse.json({ success: true, profile });
     } catch (dbErr) {
+      console.error(dbErr);
       return NextResponse.json({ error: 'Database error while saving preferences.' }, { status: 500 });
     }
   } catch (error) {

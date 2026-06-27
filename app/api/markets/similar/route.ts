@@ -13,10 +13,9 @@ export async function GET(req: Request) {
     const similar = await prisma.similarMarket.findMany({
       where: {
         OR: [
-          { marketAId: marketId },
-          { marketBId: marketId }
+          { marketIId: marketId },
+          { marketJId: marketId }
         ],
-        isMatch: true,
         confidence: { gte: 0.7 }
       },
       orderBy: { confidence: 'desc' }

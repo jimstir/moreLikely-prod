@@ -2,12 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { AppConfig } from "@/morelikely.config";
-import { mockProfileStats } from "@/lib/mockData";
 
 export default function ProfileWidget() {
   const [address, setAddress] = useState<string | null>(null);
   const [network, setNetwork] = useState<string>("Unknown");
-  const [stats, setStats] = useState({ totalPredictions: 0, winRate: "0%", insightsRequested: 0 });
+  const [stats, setStats] = useState({ totalClicks: 0, watchlisted: 0, totalInsights: 0 });
 
   useEffect(() => {
     const saved = localStorage.getItem('connected_wallet');
@@ -28,13 +27,20 @@ export default function ProfileWidget() {
       setNetwork('Mock Network (Offline)');
     }
 
-    if (AppConfig.useMockData) {
-      setStats(mockProfileStats);
-    } else {
-      // In a real live app, we'd fetch actual profile stats from backend here
-      // For now, if not using mock data, it stays 0 unless loaded
-    }
   }, []);
+
+  useEffect(() => {
+    if (address) {
+      fetch(`/api/profile/stats?address=${address}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            setStats(data.stats);
+          }
+        })
+        .catch(console.error);
+    }
+  }, [address]);
 
   if (!address) return null;
 
@@ -56,16 +62,16 @@ export default function ProfileWidget() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-white/40 p-4 rounded-lg border border-[#a63c06]/5">
-          <p className="text-xs text-[#5c3a21] uppercase tracking-wider font-semibold mb-1">Total Predictions</p>
-          <p className="text-2xl font-bold text-[#d95c25]">{stats.totalPredictions}</p>
+          <p className="text-xs text-[#5c3a21] uppercase tracking-wider font-semibold mb-1">Total Market Clicks</p>
+          <p className="text-2xl font-bold text-[#d95c25]">{stats.totalClicks}</p>
         </div>
         <div className="bg-white/40 p-4 rounded-lg border border-[#a63c06]/5">
-          <p className="text-xs text-[#5c3a21] uppercase tracking-wider font-semibold mb-1">Win Rate</p>
-          <p className="text-2xl font-bold text-[#10b981]">{stats.winRate}</p>
+          <p className="text-xs text-[#5c3a21] uppercase tracking-wider font-semibold mb-1">Saved / Watchlisted</p>
+          <p className="text-2xl font-bold text-[#10b981]">{stats.watchlisted}</p>
         </div>
         <div className="bg-white/40 p-4 rounded-lg border border-[#a63c06]/5">
           <p className="text-xs text-[#5c3a21] uppercase tracking-wider font-semibold mb-1">Insights Requested</p>
-          <p className="text-2xl font-bold text-[#3d2314]">{stats.insightsRequested}</p>
+          <p className="text-2xl font-bold text-[#3d2314]">{stats.totalInsights}</p>
         </div>
       </div>
     </div>
