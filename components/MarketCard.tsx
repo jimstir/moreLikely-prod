@@ -99,7 +99,7 @@ export default function MarketCard({ market }: MarketCardProps) {
       
       <div className="mt-4 pt-4 border-t border-[#a63c06]/10">
         <div className="flex justify-between items-center mb-3">
-          <span className="text-xs text-[#d95c25] font-medium tracking-wide">LIQUIDITY: ${(market.liquidity).toLocaleString()}</span>
+          <span className="text-xs text-[#a63c06] font-medium tracking-wide">LIQUIDITY: ${(market.liquidity || 0).toLocaleString()}</span>
           <button onClick={(e) => { e.stopPropagation(); setShowSimilar(true); }} className="text-xs text-[#7a4b2c] hover:text-[#d95c25] underline">Similar Markets</button>
         </div>
         

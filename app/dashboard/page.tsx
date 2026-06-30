@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import MarketCard from "@/components/MarketCard";
-import ProfileWidget from "@/components/ProfileWidget";
+import SearchWidget from "@/components/SearchWidget";
 import { MarketItem } from "@/lib/types";
 import { AppConfig } from "@/morelikely.config";
 import { mockMarkets } from "@/lib/mockData";
@@ -51,7 +51,7 @@ export default function DashboardPage() {
   return (
     <div className="max-w-7xl mx-auto animate-in fade-in duration-500">
       
-      <ProfileWidget />
+      <SearchWidget />
 
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-4">
         <div>

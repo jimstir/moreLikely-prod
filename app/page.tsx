@@ -1,6 +1,12 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
+import { AppConfig } from "@/morelikely.config";
 
 export default function LandingPage() {
+  if (AppConfig.marketingWebLink) {
+    redirect(AppConfig.marketingWebLink);
+  }
+  
   return (
     <div className="flex flex-col items-center justify-center min-h-[80vh] text-center px-4 relative">
       {/* Background glowing orb */}

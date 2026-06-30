@@ -5,6 +5,8 @@ import { useState, useEffect } from "react";
 import { BrowserProvider } from "ethers";
 import { AppConfig } from "@/morelikely.config";
 
+import WalletModal from "./WalletModal";
+
 declare global {
   interface Window {
     ethereum: any;
@@ -19,6 +21,7 @@ interface TopbarProps {
 export default function Topbar({ onToggleSidebar, onOpenSettings }: TopbarProps) {
   const [address, setAddress] = useState<string>("");
   const [showOnboardModal, setShowOnboardModal] = useState(false);
+  const [showWalletModal, setShowWalletModal] = useState(false);
   const [email, setEmail] = useState("");
 
   useEffect(() => {
@@ -27,8 +30,14 @@ export default function Topbar({ onToggleSidebar, onOpenSettings }: TopbarProps)
   }, []);
 
   const initiateConnection = () => {
-    if (address) return; // already connected
+    // If not connected, or even if connected, we want to open the Onboard/Connect flow?
+    // The WalletModal now triggers this via handleConnectClick for actual MetaMask popup.
     setShowOnboardModal(true);
+  };
+
+  const handleDisconnect = () => {
+    setAddress("");
+    localStorage.removeItem('connected_wallet');
   };
 
   const handleConnect = async (skipEmail: boolean) => {
@@ -93,23 +102,31 @@ export default function Topbar({ onToggleSidebar, onOpenSettings }: TopbarProps)
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16m-7 6h7" />
             </svg>
           </button>
-          <Link href="/" className="text-xl font-bold tracking-tight text-gradient">
+          <Link href={AppConfig.marketingWebLink ? "/dashboard" : "/"} className="text-xl font-bold tracking-tight text-black">
             moreLikely
           </Link>
-          <nav className="hidden md:flex ml-8 gap-6">
-            <Link href="/dashboard" className="text-sm text-[#5c3a21] hover:text-[#3d2314] transition-colors">
-              Dashboard
-            </Link>
-          </nav>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-6">
+          <Link href="/learn" className="hidden md:block text-lg font-bold text-[#3d2314] hover:text-[#d95c25] transition-colors">
+            Learn More
+          </Link>
+          {address ? (
           <button 
-            onClick={initiateConnection}
-            className="hidden sm:block px-4 py-2 rounded-full text-sm font-semibold bg-[#a63c06]/10 text-[#d95c25] border border-[#a63c06]/30 hover:bg-[#a63c06]/20 transition-all"
+            onClick={() => setShowWalletModal(true)}
+            className="flex items-center gap-2 bg-gradient-to-r from-[#10b981] to-[#059669] text-white px-5 py-2.5 rounded-xl font-bold hover:opacity-90 transition-opacity shadow-md border border-[#10b981]/20"
           >
-            {address ? `${address.substring(0,6)}...${address.substring(address.length - 4)}` : "Connect Wallet"}
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
+            View Profile
           </button>
+          ) : (
+          <button 
+            onClick={() => setShowWalletModal(true)}
+            className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-all border bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100"
+          >
+            Connect Wallet
+          </button>
+          )}
           <button 
             onClick={onOpenSettings}
             className="p-2 rounded-lg hover:bg-[#e6d8cf]/50 transition-colors"
@@ -122,6 +139,14 @@ export default function Topbar({ onToggleSidebar, onOpenSettings }: TopbarProps)
           </button>
         </div>
       </header>
+
+      <WalletModal 
+        isOpen={showWalletModal}
+        onClose={() => setShowWalletModal(false)}
+        address={address}
+        onInitiateConnect={initiateConnection}
+        onDisconnect={handleDisconnect}
+      />
 
       {showOnboardModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
